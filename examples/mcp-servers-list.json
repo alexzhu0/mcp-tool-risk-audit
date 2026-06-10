@@ -1,0 +1,15 @@
+{
+  "servers": [
+    {
+      "name": "safe-docs",
+      "command": "node",
+      "args": ["index.js", "--root", "/workspace/docs"],
+      "env": {
+        "SAFE_MODE": "1"
+      },
+      "scopes": ["read"],
+      "description": "Read only MCP docs tool",
+      "auth": "none"
+    }
+  ]
+}

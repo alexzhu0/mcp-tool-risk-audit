@@ -1,0 +1,13 @@
+<svg width="1280" height="640" viewBox="0 0 1280 640" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f172a"/>
+      <stop offset="100%" stop-color="#1e3a8a"/>
+    </linearGradient>
+  </defs>
+  <rect width="1280" height="640" fill="url(#bg)" />
+  <text x="64" y="220" fill="#f8fafc" font-family="Arial" font-size="72" font-weight="700">MCP Tool Risk Audit</text>
+  <text x="64" y="310" fill="#cbd5e1" font-family="Arial" font-size="38">Detect risky MCP tool commands, paths, secrets,</text>
+  <text x="64" y="360" fill="#cbd5e1" font-family="Arial" font-size="38">network settings, and auth/doc gaps.</text>
+  <text x="64" y="560" fill="#e2e8f0" font-family="Arial" font-size="24">Run locally with: PYTHONPATH=src python3 -m mcp_tool_risk_audit ...</text>
+</svg>

@@ -1,0 +1,43 @@
+{
+  "version": "1.0",
+  "rules": {
+    "command_rules": [
+      {
+        "id": "CMD-RUNTIME",
+        "severity": "medium",
+        "patterns": ["bash", "sh", "powershell", "python", "python3", "node", "ruby", "perl"],
+        "message": "Command runtime can execute arbitrary code"
+      }
+    ],
+    "path_rules": [
+      {
+        "id": "PATH-BROAD",
+        "severity": "medium",
+        "patterns": ["/", "/tmp", "/var", "/etc", "/root", "/home", "~/", "c:/", "c:\\", "./", "../"],
+        "message": "Potentially broad filesystem path"
+      }
+    ],
+    "env_rules": [
+      {
+        "id": "ENV-SECRET",
+        "severity": "high",
+        "patterns": ["token", "secret", "api_key", "apikey", "password", "credential", "private_key"]
+      }
+    ],
+    "scope_rules": [
+      {
+        "id": "SCOPE-BROAD",
+        "severity": "high",
+        "patterns": ["*", "all", "admin", "full", "write", "delete", "remove", "filesystem"],
+        "message": "Scope appears overly broad"
+      }
+    ],
+    "network_rules": [
+      {
+        "id": "NETWORK-NO-AUTH",
+        "severity": "high",
+        "message": "Network endpoint without auth hints"
+      }
+    ]
+  }
+}

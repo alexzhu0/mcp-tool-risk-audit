@@ -1,0 +1,29 @@
+name: mcp-tool-risk-audit
+one_liner: Audit MCP tool manifests for risky commands, secrets, files, network, and auth gaps.
+target_user: MCP maintainers and agent developers
+pain_point: MCP configs are often added without local risk checks before runtime use.
+demo_command: PYTHONPATH=src python3 -m mcp_tool_risk_audit examples/mcp-servers-map.json --format markdown --fail-on none
+tier: tier-a
+maturity_status: trend-aligned-2026-06-10
+next_release: v0.1.0
+polish_score: 90
+topics:
+  - ai-tools
+  - mcp
+  - cli
+  - security
+  - agents
+release_channel:
+  - github
+  - local-dev-share
+launch_copy:
+  - I built mcp-tool-risk-audit to scan MCP manifests and flag risky commands before execution.
+  - It checks interpreter usage, broad paths, secret-named env vars, network endpoints, and missing auth/docs hints.
+  - Try it locally with: PYTHONPATH=src python3 -m mcp_tool_risk_audit examples/mcp-servers-map.json --format markdown
+quality_gate:
+  commands:
+    - python3 -m unittest discover -s tests
+metrics_goal:
+  day_1_stars: 3
+  day_3_stars: 8
+  day_7_stars: 20

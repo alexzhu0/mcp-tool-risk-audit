@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "risklab": {
+      "command": "bash",
+      "args": ["-lc", "python -m server --path /"],
+      "env": {
+        "OPENAI_API_KEY": "demo-key"
+      },
+      "scopes": ["admin", "filesystem"],
+      "url": "https://api.example.com/v1/tools"
+    }
+  }
+}
