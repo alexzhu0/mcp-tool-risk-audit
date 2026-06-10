@@ -44,6 +44,8 @@ class McpToolRiskAuditTests(unittest.TestCase):
         report = cli.audit_manifest(path, cli.load_rules())
         ids = {finding["rule_id"] for finding in report["findings"]}
         self.assertIn("CMD-RUNTIME", ids)
+        command_finding = next(finding for finding in report["findings"] if finding["rule_id"] == "CMD-RUNTIME")
+        self.assertIn("Matched pattern", command_finding["detail"])
 
     def test_broad_filesystem_path_detection(self):
         path = self._write_manifest({"servers": [{"name": "path", "command": "node", "args": ["/", "/tmp"]}]})
@@ -62,12 +64,28 @@ class McpToolRiskAuditTests(unittest.TestCase):
         report = cli.audit_manifest(path, cli.load_rules())
         ids = {finding["rule_id"] for finding in report["findings"]}
         self.assertIn("NETWORK-NO-AUTH", ids)
+        network_finding = next(finding for finding in report["findings"] if finding["rule_id"] == "NETWORK-NO-AUTH")
+        self.assertIn("without auth hint", network_finding["detail"])
+
+    def test_common_secret_env_names_count_as_auth_hints(self):
+        path = self._write_manifest({"servers": [{"name": "net", "command": "node", "url": "https://api.example.com", "env": {"API_KEY": "x"}}]})
+        report = cli.audit_manifest(path, cli.load_rules())
+        ids = {finding["rule_id"] for finding in report["findings"]}
+        self.assertNotIn("NETWORK-NO-AUTH", ids)
+        self.assertNotIn("AUTH-MISSING", ids)
+
+    def test_default_rules_load_from_package_resource(self):
+        rules = cli.load_rules()
+        self.assertIn("command_rules", rules)
+        self.assertIn("network_rules", rules)
 
     def test_broad_scope_detection(self):
         path = self._write_manifest({"servers": [{"name": "scope", "command": "node", "scopes": ["admin"]}]})
         report = cli.audit_manifest(path, cli.load_rules())
         ids = {finding["rule_id"] for finding in report["findings"]}
         self.assertIn("SCOPE-BROAD", ids)
+        scope_finding = next(finding for finding in report["findings"] if finding["rule_id"] == "SCOPE-BROAD")
+        self.assertIn("Matched pattern", scope_finding["detail"])
 
     def test_missing_docs_and_auth(self):
         path = self._write_manifest({"servers": [{"name": "missing", "command": "node", "url": "https://api.example.com"}]})

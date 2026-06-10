@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import json
 import sys
+from importlib import resources
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Sequence
 
@@ -25,10 +26,17 @@ def _as_list(value: Any) -> List[str]:
 
 
 def load_rules(path: Path | None = None) -> Dict[str, Any]:
-    rules_path = Path(path) if path else RULES_FILE
-    if not rules_path.exists():
-        raise FileNotFoundError(f"rules file not found: {rules_path}")
-    payload = json.loads(rules_path.read_text(encoding="utf-8"))
+    if path:
+        rules_path = Path(path)
+        if not rules_path.exists():
+            raise FileNotFoundError(f"rules file not found: {rules_path}")
+        payload = json.loads(rules_path.read_text(encoding="utf-8"))
+    else:
+        try:
+            raw = resources.files("mcp_tool_risk_audit").joinpath("rules/default.json").read_text(encoding="utf-8")
+        except FileNotFoundError:
+            raw = RULES_FILE.read_text(encoding="utf-8")
+        payload = json.loads(raw)
     return payload.get("rules", payload)
 
 
@@ -83,7 +91,13 @@ def _contains_any(value: str, patterns: Iterable[str]) -> bool:
     return any(pattern in lowered for pattern in patterns)
 
 
-def _match_rule(server: Dict[str, Any], rule: Dict[str, Any], category: str, details: List[Dict[str, Any]]):
+def _match_rule(
+    server: Dict[str, Any],
+    rule: Dict[str, Any],
+    category: str,
+    details: List[Dict[str, Any]],
+    matched: str | None = None,
+):
     severity = str(rule.get("severity", "low"))
     finding = {
         "server": server["name"],
@@ -91,7 +105,7 @@ def _match_rule(server: Dict[str, Any], rule: Dict[str, Any], category: str, det
         "rule_id": rule.get("id", category.upper()),
         "category": category,
         "message": rule.get("message", category),
-        "detail": rule.get("detail", ""),
+        "detail": rule.get("detail") or (f"Matched pattern: {matched}" if matched else ""),
     }
     details.append(finding)
 
@@ -100,10 +114,12 @@ def _has_auth_hint(server: Dict[str, Any]) -> bool:
     auth_fields = ("auth", "authentication", "authUrl", "auth_url", "oauthClientId", "oauth_client_id", "auth_provider", "authorization")
     if any(_as_str(server.get(field)).strip() for field in auth_fields):
         return True
+    auth_name_markers = ("key", "token", "secret", "api_key", "apikey", "password", "credential", "private_key")
     env = server.get("env")
     if isinstance(env, dict):
         for name in env.keys():
-            if _as_str(name).lower() in {"key", "token", "secret"}:
+            normalized = _as_str(name).lower()
+            if any(marker in normalized for marker in auth_name_markers):
                 return True
     return False
 
@@ -144,8 +160,9 @@ def audit_server(server: Dict[str, Any], rules: Dict[str, Any]) -> List[Dict[str
 
     for rule in command_rules:
         patterns = [str(item).lower() for item in rule.get("patterns", [])]
-        if _contains_any(command_text, patterns):
-            _match_rule(server, rule, "command", findings)
+        matched = next((pattern for pattern in patterns if pattern in command_text), None)
+        if matched:
+            _match_rule(server, rule, "command", findings, matched=matched)
 
     broad_path_patterns = []
     for rule in path_rules:
@@ -188,15 +205,21 @@ def audit_server(server: Dict[str, Any], rules: Dict[str, Any]) -> List[Dict[str
     scopes = [str(scope).lower() for scope in _as_list(server.get("scopes"))]
     for rule in scope_rules:
         patterns = [str(item).lower() for item in rule.get("patterns", [])]
-        if any(_contains_any(scope, patterns) for scope in scopes):
-            _match_rule(server, rule, "scope", findings)
+        matched = next((pattern for scope in scopes for pattern in patterns if pattern in scope), None)
+        if matched:
+            _match_rule(server, rule, "scope", findings, matched=matched)
             break
 
     has_network_urls = bool(_extract_urls(server))
     if has_network_urls and not _has_auth_hint(server):
         for rule in network_rules:
             if rule.get("id") == "NETWORK-NO-AUTH":
-                _match_rule(server, rule, "network", findings)
+                _match_rule(
+                    server,
+                    {**rule, "detail": "Network URL present without auth hint"},
+                    "network",
+                    findings,
+                )
                 break
 
     has_docs = any(
@@ -320,7 +343,7 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument(
         "--rules",
-        default=str(RULES_FILE),
+        default=None,
         help="Path to rules JSON",
     )
     return parser

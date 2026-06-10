@@ -5,7 +5,7 @@ pain_point: MCP configs are often added without local risk checks before runtime
 demo_command: PYTHONPATH=src python3 -m mcp_tool_risk_audit examples/mcp-servers-map.json --format markdown --fail-on none
 tier: tier-a
 maturity_status: trend-aligned-2026-06-10
-next_release: v0.1.0
+next_release: v0.1.1
 polish_score: 90
 topics:
   - ai-tools
